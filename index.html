@@ -186,15 +186,23 @@
     }
 
     window.handleCredentialResponse = function(response) {
-      const user = parseJwt(response.credential);
+      console.log("Google respondió:", response);
 
-      document.getElementById("userStatus").textContent =
-        "Conectado como: " + user.email;
+      try {
+        const user = parseJwt(response.credential);
 
-      isOwner = user.email === OWNER_EMAIL;
+        console.log("Usuario:", user);
 
-      renderPlanner();
-    };
+        document.getElementById("userStatus").textContent =
+          "Conectado como: " + user.email;
+
+        isOwner = user.email === OWNER_EMAIL;
+
+        renderPlanner();
+      } catch (err) {
+        console.error("Error dentro del callback:", err);
+      }
+};
 
     renderPlanner();
   </script>
