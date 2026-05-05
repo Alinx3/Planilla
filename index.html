@@ -4,8 +4,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Planilla Escolar</title>
-
+  <title>1er año 1era division segundo ciclo</title>
+  <link rel="icon" type="image/png" href="Logo.png">
+  
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -112,8 +113,8 @@
   </style>
 </head>
 <body>
-  <h1>Planilla del Colegio</h1>
-  <p>Compartible con compañeros. Solo el dueño puede editar tareas y exámenes.</p>
+  <h1>Planilla de 1ro 1ra segundo ciclo.</h1>
+  <p>Compartible con compañeros. Solo el dueño (Alan pro xd) puede editar tareas y exámenes.</p>
 
   <div class="topbar">
     <div id="g_id_onload"
@@ -123,13 +124,13 @@
     </div>
 
     <div class="g_id_signin" data-type="standard"></div>
-    <span id="userStatus">No has iniciado sesión</span>
+    <span id="userStatus">No iniciaste sesión</span>
   </div>
 
   <div id="planner"></div>
 
   <div class="chat-box">
-    <h2>Asistente escolar</h2>
+    <h2>Asistente</h2>
     <input id="chatInput" placeholder="Pregunta algo..." />
     <button onclick="preguntarIA()">Enviar</button>
     <div id="chatResponse"></div>
@@ -250,7 +251,7 @@
         const user = parseJwt(response.credential);
 
         document.getElementById("userStatus").textContent =
-          "Conectado como: " + user.email;
+          "Te conectaste a: " + user.email;
 
         isOwner = user.email === OWNER_EMAIL;
 
