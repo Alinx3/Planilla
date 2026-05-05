@@ -180,6 +180,13 @@
       renderPlanner();
     };
 
+    <div style="margin-top: 20px;">
+      <h2>Asistente escolar</h2>
+      <input id="chatInput" placeholder="Pregunta algo..." style="width: 70%; padding: 8px;">
+      <button onclick="preguntarIA()">Enviar</button>
+      <div id="chatResponse" style="margin-top: 10px;"></div>
+    </div>
+
     function parseJwt(token) {
       const base64Url = token.split(".")[1];
       const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
@@ -214,7 +221,37 @@
         window.realGoogleHandler(response);
       }
     }
-</script>
+  </script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+  window.preguntarIA = async function() {
+      const input = document.getElementById("chatInput");
+      const responseBox = document.getElementById("chatResponse");
+
+      const mensaje = input.value.trim();
+
+      if (!mensaje) return;
+
+      responseBox.textContent = "Pensando...";
+
+      try {
+        const r = await fetch("https://planillaaii.onrender.com", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+          message: mensaje
+          })
+        });
+
+        const data = await r.json();
+
+        responseBox.textContent = data.reply;
+      } catch (err) {
+        responseBox.textContent = "No pude conectar con la IA.";
+      }
+
+      input.value = "";
+    };
 </body>
 </html>
