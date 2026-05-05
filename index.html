@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Planilla Escolar</title>
+
   <script src="https://accounts.google.com/gsi/client" async defer></script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -87,38 +89,61 @@
 </head>
 <body>
   <h1>Planilla del Colegio</h1>
-  <p>Compartible con compañeros. Solo el dueño (Alan osiosi xd) puede editar tareas y exámenes.</p>
+  <p>Compartible con compañeros. Solo el dueño puede editar tareas y exámenes.</p>
 
   <div class="topbar">
     <div id="g_id_onload"
          data-client_id="339716745421-9m32g145kb2pibk0ff71thv9bru2uhpd.apps.googleusercontent.com"
          data-callback="handleCredentialResponse">
     </div>
+
     <div class="g_id_signin" data-type="standard"></div>
     <span id="userStatus">No has iniciado sesión</span>
   </div>
 
   <div id="planner"></div>
 
-  <script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getDatabase,
+      ref,
+      set,
+      get
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBptDjBsGFfegLCKABQt5bdcbB42Wq0vo4",
+      authDomain: "data-plantilla.firebaseapp.com",
+      databaseURL: "https://data-plantilla-default-rtdb.firebaseio.com",
+      projectId: "data-plantilla",
+      storageBucket: "data-plantilla.firebasestorage.app",
+      messagingSenderId: "359795727645",
+      appId: "1:359795727645:web:d75d627708129ed97555f4"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
     const OWNER_EMAIL = "alanmosimann@gmail.com";
 
     const schedule = {
-        "Lunes": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20", "19:00"],
-        "Martes": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20"],
-        "Miércoles": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20", "19:00"],
-        "Jueves": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20"],
-        "Viernes": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20"]
+      "Lunes": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20", "19:00"],
+      "Martes": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20"],
+      "Miércoles": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20", "19:00"],
+      "Jueves": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20"],
+      "Viernes": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20"]
     };
 
     let isOwner = false;
 
-    function renderPlanner() {
+    async function renderPlanner() {
       const planner = document.getElementById("planner");
       planner.innerHTML = "";
 
       for (const [day, times] of Object.entries(schedule)) {
-        const note = localStorage.getItem("note_" + day) || "";
+        const snapshot = await get(ref(db, "notes/" + day));
+        const note = snapshot.exists() ? snapshot.val() : "";
 
         const div = document.createElement("div");
         div.className = "day";
@@ -128,10 +153,12 @@
           <div class="grid">
             ${times.map(t => `<div class="cell">${t}</div>`).join("")}
           </div>
+
           <div class="notes">
             <h3>Tareas / Exámenes</h3>
             <div class="saved-note">${note || "Nada cargado todavía."}</div>
-            <div class="editor ${isOwner ? "" : "hidden"}">
+
+            <div class="${isOwner ? "" : "hidden"}">
               <textarea id="txt-${day}">${note}</textarea>
               <button onclick="saveNote('${day}')">Guardar</button>
             </div>
@@ -142,25 +169,32 @@
       }
     }
 
-    function saveNote(day) {
+    window.saveNote = async function(day) {
+      if (!isOwner) return;
+
       const value = document.getElementById("txt-" + day).value;
-      localStorage.setItem("note_" + day, value);
+
+      await set(ref(db, "notes/" + day), value);
+
       renderPlanner();
-    }
+    };
 
     function parseJwt(token) {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
       return JSON.parse(atob(base64));
     }
 
-    function handleCredentialResponse(response) {
+    window.handleCredentialResponse = function(response) {
       const user = parseJwt(response.credential);
-      document.getElementById("userStatus").textContent = "Conectado como: " + user.email;
+
+      document.getElementById("userStatus").textContent =
+        "Conectado como: " + user.email;
 
       isOwner = user.email === OWNER_EMAIL;
+
       renderPlanner();
-    }
+    };
 
     renderPlanner();
   </script>
