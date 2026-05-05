@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="es">
-<!-- Hackers: no-->
+<!-- Hackers: no -->
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Planilla Escolar</title>
-  
 
   <style>
     body {
@@ -85,11 +84,36 @@
       border-radius: 8px;
       padding: 8px;
     }
+
+    .chat-box {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    #chatInput {
+      width: 100%;
+      padding: 8px;
+      box-sizing: border-box;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+
+    #chatResponse {
+      margin-top: 10px;
+      white-space: pre-wrap;
+      background: #f8f8f8;
+      border-radius: 8px;
+      padding: 10px;
+      min-height: 30px;
+    }
   </style>
 </head>
 <body>
   <h1>Planilla del Colegio</h1>
-  <p>Compartible con compañeros. Solo el dueño (alanpro osiosi xd) puede editar tareas y exámenes.</p>
+  <p>Compartible con compañeros. Solo el dueño puede editar tareas y exámenes.</p>
 
   <div class="topbar">
     <div id="g_id_onload"
@@ -103,6 +127,13 @@
   </div>
 
   <div id="planner"></div>
+
+  <div class="chat-box">
+    <h2>Asistente escolar</h2>
+    <input id="chatInput" placeholder="Pregunta algo..." />
+    <button onclick="preguntarIA()">Enviar</button>
+    <div id="chatResponse"></div>
+  </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -174,18 +205,39 @@
       if (!isOwner) return;
 
       const value = document.getElementById("txt-" + day).value;
-
       await set(ref(db, "notes/" + day), value);
 
       renderPlanner();
     };
 
-    <div style="margin-top: 20px;">
-      <h2>Asistente escolar</h2>
-      <input id="chatInput" placeholder="Pregunta algo..." style="width: 70%; padding: 8px;">
-      <button onclick="preguntarIA()">Enviar</button>
-      <div id="chatResponse" style="margin-top: 10px;"></div>
-    </div>
+    window.preguntarIA = async function() {
+      const input = document.getElementById("chatInput");
+      const responseBox = document.getElementById("chatResponse");
+
+      const mensaje = input.value.trim();
+      if (!mensaje) return;
+
+      responseBox.textContent = "Pensando...";
+
+      try {
+        const r = await fetch("https://planillaaii.onrender.com/chat", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            message: mensaje
+          })
+        });
+
+        const data = await r.json();
+        responseBox.textContent = data.reply;
+      } catch (err) {
+        responseBox.textContent = "No pude conectar con la IA.";
+      }
+
+      input.value = "";
+    };
 
     function parseJwt(token) {
       const base64Url = token.split(".")[1];
@@ -194,12 +246,8 @@
     }
 
     window.realGoogleHandler = function(response) {
-      console.log("Google respondió:", response);
-
       try {
         const user = parseJwt(response.credential);
-
-        console.log("Usuario:", user);
 
         document.getElementById("userStatus").textContent =
           "Conectado como: " + user.email;
@@ -208,50 +256,21 @@
 
         renderPlanner();
       } catch (err) {
-        console.error("Error dentro del callback:", err);
+        console.error(err);
       }
-  };
+    };
 
     renderPlanner();
   </script>
+
   <script>
     function handleCredentialResponse(response) {
-      window.__googleResponse = response;
       if (window.realGoogleHandler) {
         window.realGoogleHandler(response);
       }
     }
   </script>
+
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  window.preguntarIA = async function() {
-      const input = document.getElementById("chatInput");
-      const responseBox = document.getElementById("chatResponse");
-
-      const mensaje = input.value.trim();
-
-      if (!mensaje) return;
-
-      responseBox.textContent = "Pensando...";
-
-      try {
-        const r = await fetch("https://planillaaii.onrender.com", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-          message: mensaje
-          })
-        });
-
-        const data = await r.json();
-
-        responseBox.textContent = data.reply;
-      } catch (err) {
-        responseBox.textContent = "No pude conectar con la IA.";
-      }
-
-      input.value = "";
-    };
 </body>
 </html>
