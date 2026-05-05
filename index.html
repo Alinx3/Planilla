@@ -4,8 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Planilla Escolar</title>
-
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  
 
   <style>
     body {
@@ -94,7 +93,8 @@
   <div class="topbar">
     <div id="g_id_onload"
          data-client_id="339716745421-9m32g145kb2pibk0ff71thv9bru2uhpd.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse">
+         data-callback="handleCredentialResponse"
+         data-ux_mode="popup">
     </div>
 
     <div class="g_id_signin" data-type="standard"></div>
@@ -185,7 +185,7 @@
       return JSON.parse(atob(base64));
     }
 
-    window.handleCredentialResponse = function(response) {
+    window.realGoogleHandler = function(response) {
       console.log("Google respondió:", response);
 
       try {
@@ -202,9 +202,18 @@
       } catch (err) {
         console.error("Error dentro del callback:", err);
       }
-};
+  };
 
     renderPlanner();
   </script>
+  <script>
+    function handleCredentialResponse(response) {
+      window.__googleResponse = response;
+      if (window.realGoogleHandler) {
+        window.realGoogleHandler(response);
+      }
+    }
+</script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>
