@@ -201,12 +201,14 @@ async function renderCalendar(){
   const grid = document.createElement("div");
   grid.className="grid";
 
+  const snap = await get(ref(db,"calendar"));
+  const allData = snap.exists() ? snap.val() : {};
+  
   for(let day of days){
 
     const key = format(day);
 
-    const snap = await get(ref(db,"calendar/"+key));
-    const data = snap.exists()?snap.val():null;
+    const data = allData[key] || null;
 
     const hasContent = data && (data.tasks || data.extra);
 
