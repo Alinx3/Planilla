@@ -270,10 +270,15 @@ window.openDay = function(key,data){
   const panel = document.getElementById("dayPanel");
   panel.style.display = "block";
 
-  const d = new Date(key);
+  const [year, month, day] = key.split("-").map(Number);
+  const d = new Date(year, month - 1, day);
 
   panel.innerHTML = `
-    <h2>${d.toDateString()}</h2>
+    <h2>${d.toLocaleDateString("es-AR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric"
+    })}</h2>
 
     <h3>Tareas / Exámenes</h3>
     <textarea id="tasks">${data?.tasks || ""}</textarea>
