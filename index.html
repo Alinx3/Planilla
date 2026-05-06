@@ -1,277 +1,296 @@
 <!DOCTYPE html>
 <html lang="es">
-<!-- Hackers: no -->
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>1er año 1era division segundo ciclo</title>
-  <link rel="icon" type="image/png" href="Logo.png">
-  
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: #f5f5f5;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calendario Escolar</title>
+<link rel="icon" type="image/png" href="Logo.png">
 
-    h1 {
-      margin-bottom: 6px;
-    }
+<style>
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: #f5f5f5;
+}
 
-    .topbar {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-      margin-bottom: 20px;
-    }
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
 
-    .day {
-      background: white;
-      border-radius: 12px;
-      padding: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
+#planner {
+  margin-top: 10px;
+}
 
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 8px;
-      margin-top: 10px;
-    }
+.monthHeader {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:15px;
+  margin-bottom:10px;
+}
 
-    .cell {
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      padding: 8px;
-      background: #fafafa;
-      min-height: 42px;
-      font-size: 14px;
-    }
+.grid {
+  display:grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap:6px;
+}
 
-    .notes {
-      margin-top: 12px;
-      padding-top: 10px;
-      border-top: 1px solid #eee;
-    }
+.cell {
+  background:white;
+  border-radius:10px;
+  padding:10px;
+  min-height:50px;
+  cursor:pointer;
+  position:relative;
+  border:1px solid #ddd;
+}
 
-    textarea {
-      width: 100%;
-      min-height: 90px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      padding: 8px;
-      resize: vertical;
-      box-sizing: border-box;
-    }
+.dot {
+  width:8px;
+  height:8px;
+  background:black;
+  border-radius:50%;
+  position:absolute;
+  bottom:6px;
+  right:6px;
+}
 
-    button {
-      margin-top: 8px;
-      padding: 8px 12px;
-      cursor: pointer;
-      border: none;
-      border-radius: 8px;
-    }
+#dayPanel {
+  margin-top:20px;
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  display:none;
+}
 
-    .hidden {
-      display: none;
-    }
+textarea {
+  width:100%;
+  min-height:80px;
+  margin-top:5px;
+}
 
-    .saved-note {
-      white-space: pre-wrap;
-      background: #f8f8f8;
-      border-radius: 8px;
-      padding: 8px;
-    }
+button {
+  margin-top:8px;
+  padding:8px 12px;
+  border:none;
+  border-radius:8px;
+  cursor:pointer;
+}
 
-    .chat-box {
-      background: white;
-      border-radius: 12px;
-      padding: 16px;
-      margin-top: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    }
-
-    #chatInput {
-      width: 100%;
-      padding: 8px;
-      box-sizing: border-box;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-    }
-
-    #chatResponse {
-      margin-top: 10px;
-      white-space: pre-wrap;
-      background: #f8f8f8;
-      border-radius: 8px;
-      padding: 10px;
-      min-height: 30px;
-    }
-  </style>
+.chat-box {
+  margin-top:20px;
+  background:white;
+  padding:15px;
+  border-radius:12px;
+}
+</style>
 </head>
+
 <body>
-  <h1>Planilla de 1ro 1ra segundo ciclo.</h1>
-  <p>Compartible con compañeros. Solo el dueño (Alan pro xd) puede editar tareas y exámenes.</p>
 
-  <div class="topbar">
-    <div id="g_id_onload"
-         data-client_id="339716745421-9m32g145kb2pibk0ff71thv9bru2uhpd.apps.googleusercontent.com"
-         data-callback="handleCredentialResponse"
-         data-ux_mode="popup">
-    </div>
+<h2>Calendario escolar</h2>
 
-    <div class="g_id_signin" data-type="standard"></div>
-    <span id="userStatus">No iniciaste sesión</span>
+<div class="topbar">
+  <div id="g_id_onload"
+    data-client_id="339716745421-9m32g145kb2pibk0ff71thv9bru2uhpd.apps.googleusercontent.com"
+    data-callback="handleCredentialResponse"
+    data-ux_mode="popup">
   </div>
+  <div class="g_id_signin"></div>
 
-  <div id="planner"></div>
+  <span id="userStatus">No logueado</span>
+</div>
 
-  <div class="chat-box">
-    <h2>Asistente</h2>
-    <input id="chatInput" placeholder="Pregunta algo..." />
-    <button onclick="preguntarIA()">Enviar</button>
-    <div id="chatResponse"></div>
-  </div>
+<div class="monthHeader">
+  <button onclick="changeMonth(-1)">◀</button>
+  <h3 id="monthTitle"></h3>
+  <button onclick="changeMonth(1)">▶</button>
+</div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import {
-      getDatabase,
-      ref,
-      set,
-      get
-    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+<div id="planner"></div>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBptDjBsGFfegLCKABQt5bdcbB42Wq0vo4",
-      authDomain: "data-plantilla.firebaseapp.com",
-      databaseURL: "https://data-plantilla-default-rtdb.firebaseio.com",
-      projectId: "data-plantilla",
-      storageBucket: "data-plantilla.firebasestorage.app",
-      messagingSenderId: "359795727645",
-      appId: "1:359795727645:web:d75d627708129ed97555f4"
-    };
+<div id="dayPanel"></div>
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+<div class="chat-box">
+  <h3>Asistente</h3>
+  <input id="chatInput" placeholder="Pregunta algo..."/>
+  <button onclick="preguntarIA()">Enviar</button>
+  <div id="chatResponse"></div>
+</div>
 
-    const OWNER_EMAIL = "alanmosimann@gmail.com";
+<script type="module">
 
-    const schedule = {
-      "Lunes": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20", "19:00"],
-      "Martes": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20"],
-      "Miércoles": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20", "19:00"],
-      "Jueves": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20"],
-      "Viernes": ["14:00", "14:40", "15:30", "16:10", "17:00", "17:40", "18:20"]
-    };
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
-    let isOwner = false;
+const firebaseConfig = {
+  apiKey: "AIzaSyBptDjBsGFfegLCKABQt5bdcbB42Wq0vo4",
+  authDomain: "data-plantilla.firebaseapp.com",
+  databaseURL: "https://data-plantilla-default-rtdb.firebaseio.com",
+  projectId: "data-plantilla",
+  storageBucket: "data-plantilla.firebasestorage.app",
+  messagingSenderId: "359795727645",
+  appId: "1:359795727645:web:d75d627708129ed97555f4"
+};
 
-    async function renderPlanner() {
-      const planner = document.getElementById("planner");
-      planner.innerHTML = "";
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 
-      for (const [day, times] of Object.entries(schedule)) {
-        const snapshot = await get(ref(db, "notes/" + day));
-        const note = snapshot.exists() ? snapshot.val() : "";
+const OWNER_EMAIL = "alanmosimann@gmail.com";
 
-        const div = document.createElement("div");
-        div.className = "day";
+let isOwner = false;
+let currentDate = new Date();
+let cache = {};
 
-        div.innerHTML = `
-          <h2>${day}</h2>
-          <div class="grid">
-            ${times.map(t => `<div class="cell">${t}</div>`).join("")}
-          </div>
+function format(d){
+  return d.toISOString().split("T")[0];
+}
 
-          <div class="notes">
-            <h3>Tareas / Exámenes</h3>
-            <div class="saved-note">${note || "Nada cargado todavía."}</div>
+function monthName(m){
+  return ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][m];
+}
 
-            <div class="${isOwner ? "" : "hidden"}">
-              <textarea id="txt-${day}">${note}</textarea>
-              <button onclick="saveNote('${day}')">Guardar</button>
-            </div>
-          </div>
-        `;
+function getDays(y,m){
+  let d = new Date(y,m,1);
+  let out = [];
+  while(d.getMonth()===m){
+    out.push(new Date(d));
+    d.setDate(d.getDate()+1);
+  }
+  return out;
+}
 
-        planner.appendChild(div);
-      }
-    }
+async function renderCalendar(){
 
-    window.saveNote = async function(day) {
-      if (!isOwner) return;
+  const planner = document.getElementById("planner");
+  planner.innerHTML="";
 
-      const value = document.getElementById("txt-" + day).value;
-      await set(ref(db, "notes/" + day), value);
+  document.getElementById("monthTitle").innerText =
+    monthName(currentDate.getMonth()) + " " + currentDate.getFullYear();
 
-      renderPlanner();
-    };
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
 
-    window.preguntarIA = async function() {
-      const input = document.getElementById("chatInput");
-      const responseBox = document.getElementById("chatResponse");
+  const days = getDays(year,month);
 
-      const mensaje = input.value.trim();
-      if (!mensaje) return;
+  const grid = document.createElement("div");
+  grid.className = "grid";
 
-      responseBox.textContent = "Pensando...";
+  for(let day of days){
 
-      try {
-        const r = await fetch("https://planillaaii.onrender.com/chat", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            message: mensaje
-          })
-        });
+    const key = format(day);
 
-        const data = await r.json();
-        responseBox.textContent = data.reply;
-      } catch (err) {
-        responseBox.textContent = "No pude conectar con la IA.";
-      }
+    const snap = await get(ref(db,"calendar/"+key));
+    const data = snap.exists()?snap.val():null;
 
-      input.value = "";
-    };
+    const cell = document.createElement("div");
+    cell.className = "cell";
 
-    function parseJwt(token) {
-      const base64Url = token.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      return JSON.parse(atob(base64));
-    }
+    cell.innerHTML = `
+      <div>${day.getDate()}</div>
+      ${data ? `<div class="dot"></div>` : ""}
+    `;
 
-    window.realGoogleHandler = function(response) {
-      try {
-        const user = parseJwt(response.credential);
+    cell.onclick = ()=>openDay(key,data);
 
-        document.getElementById("userStatus").textContent =
-          "Te conectaste a: " + user.email;
+    grid.appendChild(cell);
+  }
 
-        isOwner = user.email === OWNER_EMAIL;
+  planner.appendChild(grid);
+}
 
-        renderPlanner();
-      } catch (err) {
-        console.error(err);
-      }
-    };
+window.openDay = function(key,data){
 
-    renderPlanner();
-  </script>
+  const panel = document.getElementById("dayPanel");
+  panel.style.display="block";
 
-  <script>
-    function handleCredentialResponse(response) {
-      if (window.realGoogleHandler) {
-        window.realGoogleHandler(response);
-      }
-    }
-  </script>
+  const d = new Date(key);
 
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  panel.innerHTML = `
+    <h2>${d.toDateString()}</h2>
+
+    <h3>Tareas / Exámenes</h3>
+    <textarea id="tasks">${data?.tasks||""}</textarea>
+
+    <h3>Extra</h3>
+    <textarea id="extra">${data?.extra||""}</textarea>
+
+    ${isOwner?`<button onclick="saveDay('${key}')">Guardar</button>`:""}
+  `;
+};
+
+window.saveDay = async function(key){
+
+  if(!isOwner) return;
+
+  await set(ref(db,"calendar/"+key),{
+    tasks: document.getElementById("tasks").value,
+    extra: document.getElementById("extra").value
+  });
+
+  renderCalendar();
+};
+
+window.changeMonth = function(n){
+  currentDate.setMonth(currentDate.getMonth()+n);
+  renderCalendar();
+};
+
+// IA
+window.preguntarIA = async function(){
+
+  const input = document.getElementById("chatInput");
+  const out = document.getElementById("chatResponse");
+
+  out.textContent="Pensando...";
+
+  try{
+    const r = await fetch("https://planillaaii.onrender.com/chat",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:input.value})
+    });
+
+    const d = await r.json();
+    out.textContent=d.reply;
+
+  }catch(e){
+    out.textContent="Error conexión IA";
+  }
+};
+
+// login
+function parseJwt(t){
+  const b=t.split(".")[1];
+  return JSON.parse(atob(b));
+}
+
+window.realGoogleHandler=function(res){
+
+  const user=parseJwt(res.credential);
+
+  document.getElementById("userStatus").innerText=user.email;
+
+  isOwner = user.email===OWNER_EMAIL;
+
+  renderCalendar();
+};
+
+renderCalendar();
+
+</script>
+
+<script>
+function handleCredentialResponse(r){
+  if(window.realGoogleHandler) window.realGoogleHandler(r);
+}
+</script>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
 </body>
 </html>
