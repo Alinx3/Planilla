@@ -40,31 +40,25 @@ body {
 }
 
 .cell {
-  background:white;
-  border-radius:10px;
-  padding:10px;
-  min-height:50px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:60px;
   cursor:pointer;
-  position:relative;
-  border:1px solid #ddd;
 }
 
-.dot {
-  width:8px;
-  height:8px;
-  background:black;
+.dayNumber {
+  width:30px;
+  height:30px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
   border-radius:50%;
-  position:absolute;
-  bottom:6px;
-  right:6px;
+  font-size:14px;
 }
 
-#dayPanel {
-  margin-top:20px;
-  background:white;
-  padding:15px;
-  border-radius:12px;
-  display:none;
+.hasEvent {
+  border:2px solid black;
 }
 
 textarea {
@@ -154,14 +148,16 @@ function monthName(m){
   return ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][m];
 }
 
-function getDays(y,m){
-  let d = new Date(y,m,1);
-  let out = [];
-  while(d.getMonth()===m){
-    out.push(new Date(d));
-    d.setDate(d.getDate()+1);
+function getDays(year, month){
+  let days = [];
+  let date = new Date(year, month, 1);
+
+  while(date.getMonth() === month){
+    days.push(new Date(date));
+    date.setDate(date.getDate() + 1);
   }
-  return out;
+
+  return days;
 }
 
 async function renderCalendar(){
@@ -190,9 +186,12 @@ async function renderCalendar(){
     const cell = document.createElement("div");
     cell.className = "cell";
 
+    const circleClass = data ? "dayNumber hasEvent" : "dayNumber";
+
     cell.innerHTML = `
-      <div>${day.getDate()}</div>
-      ${data ? `<div class="dot"></div>` : ""}
+      <div class="${circleClass}">
+        ${day.getDate()}
+      </div>
     `;
 
     cell.onclick = ()=>openDay(key,data);
