@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Calendario Escolar</title>
+<title>Calendario Escolar Pro</title>
 <link rel="icon" type="image/png" href="Logo.png">
 
 <style>
@@ -12,19 +12,10 @@ body {
   margin: 0;
   padding: 20px;
   background: #f5f5f5;
+  overflow-x:hidden;
 }
 
-.topbar {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-
-#planner {
-  margin-top: 10px;
-}
-
+/* HEADER MES */
 .monthHeader {
   display:flex;
   justify-content:center;
@@ -33,40 +24,88 @@ body {
   margin-bottom:10px;
 }
 
+/* CONTENEDOR SLIDE */
+#calendarWrapper {
+  overflow:hidden;
+  position:relative;
+  height:420px;
+}
+
+/* ANIMACIÓN SLIDE */
+.slide {
+  position:absolute;
+  width:100%;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+}
+
+/* GRID */
 .grid {
   display:grid;
   grid-template-columns: repeat(7, 1fr);
   gap:6px;
 }
 
+/* CELDAS */
 .cell {
   display:flex;
   justify-content:center;
   align-items:center;
   height:60px;
   cursor:pointer;
+  position:relative;
 }
 
+/* NÚMERO TIPO GOOGLE CALENDAR */
 .dayNumber {
-  width:30px;
-  height:30px;
+  width:32px;
+  height:32px;
   display:flex;
   justify-content:center;
   align-items:center;
   border-radius:50%;
   font-size:14px;
+  transition: all 0.2s;
 }
 
+/* SI TIENE EVENTO */
 .hasEvent {
   border:2px solid black;
 }
 
+/* COLORES POR TIPO */
+.event-task { background:#dbeafe; }
+.event-exam { background:#fee2e2; }
+.event-extra { background:#dcfce7; }
+
+/* PREVIEW */
+.preview {
+  position:absolute;
+  bottom:65px;
+  left:50%;
+  transform:translateX(-50%);
+  background:black;
+  color:white;
+  padding:6px 10px;
+  border-radius:8px;
+  font-size:12px;
+  white-space:pre-wrap;
+  display:none;
+  z-index:10;
+}
+
+/* PANEL DÍA */
+#dayPanel {
+  margin-top:20px;
+  background:white;
+  padding:15px;
+  border-radius:12px;
+  display:none;
+}
 textarea {
   width:100%;
   min-height:80px;
   margin-top:5px;
 }
-
 button {
   margin-top:8px;
   padding:8px 12px;
@@ -74,30 +113,12 @@ button {
   border-radius:8px;
   cursor:pointer;
 }
-
-.chat-box {
-  margin-top:20px;
-  background:white;
-  padding:15px;
-  border-radius:12px;
-}
 </style>
 </head>
 
 <body>
 
-<h2>Calendario escolar</h2>
-
-<div class="topbar">
-  <div id="g_id_onload"
-    data-client_id="339716745421-9m32g145kb2pibk0ff71thv9bru2uhpd.apps.googleusercontent.com"
-    data-callback="handleCredentialResponse"
-    data-ux_mode="popup">
-  </div>
-  <div class="g_id_signin"></div>
-
-  <span id="userStatus">No logueado</span>
-</div>
+<h2>Calendario escolar pro</h2>
 
 <div class="monthHeader">
   <button onclick="changeMonth(-1)">◀</button>
@@ -105,16 +126,9 @@ button {
   <button onclick="changeMonth(1)">▶</button>
 </div>
 
-<div id="planner"></div>
+<div id="calendarWrapper"></div>
 
 <div id="dayPanel"></div>
-
-<div class="chat-box">
-  <h3>Asistente</h3>
-  <input id="chatInput" placeholder="Pregunta algo..."/>
-  <button onclick="preguntarIA()">Enviar</button>
-  <div id="chatResponse"></div>
-</div>
 
 <script type="module">
 
@@ -134,11 +148,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-const OWNER_EMAIL = "alanmosimann@gmail.com";
-
-let isOwner = false;
 let currentDate = new Date();
-let cache = {};
+let direction = 1;
 
 function format(d){
   return d.toISOString().split("T")[0];
@@ -148,33 +159,31 @@ function monthName(m){
   return ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"][m];
 }
 
-function getDays(year, month){
-  let days = [];
-  let date = new Date(year, month, 1);
-
-  while(date.getMonth() === month){
-    days.push(new Date(date));
-    date.setDate(date.getDate() + 1);
+function getDays(y,m){
+  let d=new Date(y,m,1);
+  let arr=[];
+  while(d.getMonth()===m){
+    arr.push(new Date(d));
+    d.setDate(d.getDate()+1);
   }
-
-  return days;
+  return arr;
 }
 
+/* SLIDE CALENDARIO */
 async function renderCalendar(){
 
-  const planner = document.getElementById("planner");
-  planner.innerHTML="";
-
   document.getElementById("monthTitle").innerText =
-    monthName(currentDate.getMonth()) + " " + currentDate.getFullYear();
+    monthName(currentDate.getMonth())+" "+currentDate.getFullYear();
 
-  const year = currentDate.getFullYear();
-  const month = currentDate.getMonth();
+  const wrapper = document.getElementById("calendarWrapper");
 
-  const days = getDays(year,month);
+  const slide = document.createElement("div");
+  slide.className="slide";
+
+  const days = getDays(currentDate.getFullYear(),currentDate.getMonth());
 
   const grid = document.createElement("div");
-  grid.className = "grid";
+  grid.className="grid";
 
   for(let day of days){
 
@@ -183,23 +192,48 @@ async function renderCalendar(){
     const snap = await get(ref(db,"calendar/"+key));
     const data = snap.exists()?snap.val():null;
 
+    const hasContent = data && (data.tasks || data.extra);
+
     const cell = document.createElement("div");
-    cell.className = "cell";
+    cell.className="cell";
 
-    const circleClass = data ? "dayNumber hasEvent" : "dayNumber";
+    let colorClass = "";
 
-    cell.innerHTML = `
-      <div class="${circleClass}">
+    if(data){
+      if(data.tasks) colorClass="event-task";
+      else if(data.extra) colorClass="event-extra";
+    }
+
+    cell.innerHTML=`
+      <div class="dayNumber ${hasContent?"hasEvent":""} ${colorClass}">
         ${day.getDate()}
       </div>
+      <div class="preview">${(data?.tasks||"") + "\n" + (data?.extra||"")}</div>
     `;
 
-    cell.onclick = ()=>openDay(key,data);
+    const preview = cell.querySelector(".preview");
+
+    cell.onmouseenter=()=>{ preview.style.display="block"; };
+    cell.onmouseleave=()=>{ preview.style.display="none"; };
+
+    cell.onclick=()=>openDay(key,data);
 
     grid.appendChild(cell);
   }
 
-  planner.appendChild(grid);
+  slide.appendChild(grid);
+
+  wrapper.innerHTML="";
+
+  slide.style.transform = `translateX(${direction*50}px)`;
+  slide.style.opacity="0";
+
+  wrapper.appendChild(slide);
+
+  requestAnimationFrame(()=>{
+    slide.style.transform="translateX(0px)";
+    slide.style.opacity="1";
+  });
 }
 
 window.openDay = function(key,data){
@@ -207,9 +241,9 @@ window.openDay = function(key,data){
   const panel = document.getElementById("dayPanel");
   panel.style.display="block";
 
-  const d = new Date(key);
+  const d=new Date(key);
 
-  panel.innerHTML = `
+  panel.innerHTML=`
     <h2>${d.toDateString()}</h2>
 
     <h3>Tareas / Exámenes</h3>
@@ -218,78 +252,36 @@ window.openDay = function(key,data){
     <h3>Extra</h3>
     <textarea id="extra">${data?.extra||""}</textarea>
 
-    ${isOwner?`<button onclick="saveDay('${key}')">Guardar</button>`:""}
+    <button onclick="saveDay('${key}')">Guardar</button>
   `;
 };
 
 window.saveDay = async function(key){
 
-  if(!isOwner) return;
+  const tasks=document.getElementById("tasks").value.trim();
+  const extra=document.getElementById("extra").value.trim();
 
-  await set(ref(db,"calendar/"+key),{
-    tasks: document.getElementById("tasks").value,
-    extra: document.getElementById("extra").value
-  });
-
-  renderCalendar();
-};
-
-window.changeMonth = function(n){
-  currentDate.setMonth(currentDate.getMonth()+n);
-  renderCalendar();
-};
-
-// IA
-window.preguntarIA = async function(){
-
-  const input = document.getElementById("chatInput");
-  const out = document.getElementById("chatResponse");
-
-  out.textContent="Pensando...";
-
-  try{
-    const r = await fetch("https://planillaaii.onrender.com/chat",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:input.value})
+  if(!tasks && !extra){
+    await set(ref(db,"calendar/"+key),null); // 🔥 elimina burbuja
+  } else {
+    await set(ref(db,"calendar/"+key),{
+      tasks,
+      extra
     });
-
-    const d = await r.json();
-    out.textContent=d.reply;
-
-  }catch(e){
-    out.textContent="Error conexión IA";
   }
+
+  renderCalendar();
 };
 
-// login
-function parseJwt(t){
-  const b=t.split(".")[1];
-  return JSON.parse(atob(b));
-}
-
-window.realGoogleHandler=function(res){
-
-  const user=parseJwt(res.credential);
-
-  document.getElementById("userStatus").innerText=user.email;
-
-  isOwner = user.email===OWNER_EMAIL;
-
+window.changeMonth=function(n){
+  direction=n;
+  currentDate.setMonth(currentDate.getMonth()+n);
   renderCalendar();
 };
 
 renderCalendar();
 
 </script>
-
-<script>
-function handleCredentialResponse(r){
-  if(window.realGoogleHandler) window.realGoogleHandler(r);
-}
-</script>
-
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 </body>
 </html>
