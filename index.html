@@ -72,9 +72,7 @@ body {
   border:2px solid black;
 }
 
-/* tipos */
 .event-task { background:#dbeafe; }
-.event-exam { background:#fee2e2; }
 .event-extra { background:#dcfce7; }
 
 .preview {
@@ -100,10 +98,11 @@ body {
   display:none;
 }
 
-textarea {
+textarea, input {
   width:100%;
-  min-height:80px;
+  min-height:40px;
   margin-top:5px;
+  box-sizing:border-box;
 }
 
 button {
@@ -113,13 +112,21 @@ button {
   border-radius:8px;
   cursor:pointer;
 }
+
+iframe {
+  width:100%;
+  height:250px;
+  margin-top:12px;
+  border:none;
+  border-radius:10px;
+}
 </style>
 </head>
 
 <body>
 
 <h2>Calendario escolar</h2>
-<h3>(Solo el creador (alan xd) y/o las personas autorizadas podran cambiar la informacion</h3>
+<h3>(Solo el creador y autorizados pueden editar)</h3>
 
 <div class="topbar">
   <div id="g_id_onload"
@@ -167,7 +174,6 @@ let currentDate = new Date();
 let direction = 1;
 let isOwner = false;
 
-/* utils */
 function format(d){
   return d.toISOString().split("T")[0];
 }
@@ -177,102 +183,112 @@ function monthName(m){
 }
 
 function getDays(y,m){
-  let d=new Date(y,m,1);
-  let arr=[];
-  while(d.getMonth()===m){
+  let d = new Date(y,m,1);
+  let arr = [];
+  while(d.getMonth() === m){
     arr.push(new Date(d));
     d.setDate(d.getDate()+1);
   }
   return arr;
 }
 
-/* RENDER CALENDAR */
+function youtubeEmbed(url){
+  const match = url.match(/(?:v=|youtu\.be\/)([^&]+)/);
+  return match ? `https://www.youtube.com/embed/${match[1]}` : "";
+}
+
+/* RENDER */
 async function renderCalendar(){
 
   document.getElementById("monthTitle").innerText =
-    monthName(currentDate.getMonth())+" "+currentDate.getFullYear();
+    monthName(currentDate.getMonth()) + " " + currentDate.getFullYear();
 
   const wrapper = document.getElementById("calendarWrapper");
 
   const slide = document.createElement("div");
-  slide.className="slide";
+  slide.className = "slide";
 
-  const days = getDays(currentDate.getFullYear(),currentDate.getMonth());
+  const days = getDays(currentDate.getFullYear(), currentDate.getMonth());
 
   const grid = document.createElement("div");
-  grid.className="grid";
+  grid.className = "grid";
 
   const snap = await get(ref(db,"calendar"));
   const allData = snap.exists() ? snap.val() : {};
-  
+
   for(let day of days){
 
     const key = format(day);
-
     const data = allData[key] || null;
 
-    const hasContent = data && (data.tasks || data.extra);
+    const hasContent = data && (data.tasks || data.extra || data.video);
 
     const cell = document.createElement("div");
-    cell.className="cell";
+    cell.className = "cell";
 
     let colorClass = "";
-
     if(data){
-      if(data.tasks) colorClass="event-task";
-      else if(data.extra) colorClass="event-extra";
+      if(data.tasks) colorClass = "event-task";
+      else if(data.extra || data.video) colorClass = "event-extra";
     }
 
-    cell.innerHTML=`
-      <div class="dayNumber ${hasContent?"hasEvent":""} ${colorClass}">
+    cell.innerHTML = `
+      <div class="dayNumber ${hasContent ? "hasEvent" : ""} ${colorClass}">
         ${day.getDate()}
       </div>
-      <div class="preview">${(data?.tasks||"") + "\n" + (data?.extra||"")}</div>
+      <div class="preview">${(data?.tasks || "")}</div>
     `;
 
     const preview = cell.querySelector(".preview");
 
-    cell.onmouseenter=()=>preview.style.display="block";
-    cell.onmouseleave=()=>preview.style.display="none";
+    cell.onmouseenter = ()=> preview.style.display = "block";
+    cell.onmouseleave = ()=> preview.style.display = "none";
 
-    cell.onclick=()=>openDay(key,data);
+    cell.onclick = ()=> openDay(key, data);
 
     grid.appendChild(cell);
   }
 
   slide.appendChild(grid);
 
-  wrapper.innerHTML="";
+  wrapper.innerHTML = "";
 
-  slide.style.transform=`translateX(${direction*50}px)`;
-  slide.style.opacity="0";
+  slide.style.transform = `translateX(${direction*50}px)`;
+  slide.style.opacity = "0";
 
   wrapper.appendChild(slide);
 
   requestAnimationFrame(()=>{
-    slide.style.transform="translateX(0px)";
-    slide.style.opacity="1";
+    slide.style.transform = "translateX(0px)";
+    slide.style.opacity = "1";
   });
 }
 
-/* PANEL DÍA */
+/* PANEL */
 window.openDay = function(key,data){
 
   const panel = document.getElementById("dayPanel");
-  panel.style.display="block";
+  panel.style.display = "block";
 
-  const d=new Date(key);
+  const d = new Date(key);
 
-  panel.innerHTML=`
+  panel.innerHTML = `
     <h2>${d.toDateString()}</h2>
 
     <h3>Tareas / Exámenes</h3>
-    <textarea id="tasks">${data?.tasks||""}</textarea>
+    <textarea id="tasks">${data?.tasks || ""}</textarea>
 
     <h3>Extra</h3>
-    <textarea id="extra">${data?.extra||""}</textarea>
+    <textarea id="extra">${data?.extra || ""}</textarea>
 
-    ${isOwner?`<button onclick="saveDay('${key}')">Guardar</button>`:""}
+    <h3>Video de YouTube</h3>
+    <input id="video" value="${data?.video || ""}" placeholder="https://www.youtube.com/watch?v=...">
+
+    ${data?.video ? `
+      <iframe src="${youtubeEmbed(data.video)}" allowfullscreen></iframe>
+    ` : ""}
+
+    ${isOwner ? `<button onclick="saveDay('${key}')">Guardar</button>` : ""}
   `;
 };
 
@@ -281,41 +297,43 @@ window.saveDay = async function(key){
 
   if(!isOwner) return;
 
-  const tasks=document.getElementById("tasks").value.trim();
-  const extra=document.getElementById("extra").value.trim();
+  const tasks = document.getElementById("tasks").value.trim();
+  const extra = document.getElementById("extra").value.trim();
+  const video = document.getElementById("video").value.trim();
 
-  if(!tasks && !extra){
-    await set(ref(db,"calendar/"+key),null);
+  if(!tasks && !extra && !video){
+    await set(ref(db,"calendar/" + key), null);
   } else {
-    await set(ref(db,"calendar/"+key),{
+    await set(ref(db,"calendar/" + key), {
       tasks,
-      extra
+      extra,
+      video
     });
   }
 
   renderCalendar();
 };
 
-/* MONTH NAV */
-window.changeMonth=function(n){
-  direction=n;
-  currentDate.setMonth(currentDate.getMonth()+n);
+/* MONTH */
+window.changeMonth = function(n){
+  direction = n;
+  currentDate.setMonth(currentDate.getMonth() + n);
   renderCalendar();
 };
 
 /* LOGIN */
 function parseJwt(t){
-  const b=t.split(".")[1];
+  const b = t.split(".")[1];
   return JSON.parse(atob(b));
 }
 
-window.realGoogleHandler=function(res){
+window.realGoogleHandler = function(res){
 
-  const user=parseJwt(res.credential);
+  const user = parseJwt(res.credential);
 
-  document.getElementById("userStatus").innerText=user.email;
+  document.getElementById("userStatus").innerText = user.email;
 
-  isOwner = user.email===OWNER_EMAIL;
+  isOwner = user.email === OWNER_EMAIL;
 
   renderCalendar();
 };
@@ -326,8 +344,9 @@ renderCalendar();
 
 <script>
 function handleCredentialResponse(r){
-  if(window.realGoogleHandler)
+  if(window.realGoogleHandler){
     window.realGoogleHandler(r);
+  }
 }
 </script>
 
